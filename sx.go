@@ -1,15 +1,17 @@
 // Package sx provides utilities for parsing and serializing S-expressions.
 package sx
 
-import "io"
-import "io/ioutil"
-import "fmt"
-import "bufio"
-import "bytes"
-import "strconv"
-import "encoding/base64"
-import "unicode"
-import "unicode/utf8"
+import (
+	"bufio"
+	"bytes"
+	"encoding/base64"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"strconv"
+	"unicode"
+	"unicode/utf8"
+)
 
 // interface{} is one of
 //   int
@@ -628,98 +630,98 @@ func (s *spacer) write(b *bufio.Writer, t rune) {
 }
 
 func isBinary(s string) bool {
-  for i := range s {
-    c := s[i]
-    // Unicode strings should not contain 0 bytes or bytes with the two most
-    // significant bits set
-    if c == 0 || (c & 0xC0) == 0xC0 {
-      return true
-    }
-  }
-  return false
+	for i := range s {
+		c := s[i]
+		// Unicode strings should not contain 0 bytes or bytes with the two most
+		// significant bits set
+		if c == 0 || (c&0xC0) == 0xC0 {
+			return true
+		}
+	}
+	return false
 }
 
 func usesTokenCharset(s string) bool {
-  if len(s) == 0 {
-    return false
-  }
-  for i, r := range s {
-    var ok bool
-    if i == 0 {
-      ok = isTokenStartChar(r)
-    } else {
-      ok = isTokenChar(r)
-    }
-    if !ok {
-      return false
-    }
-  }
-  return true
+	if len(s) == 0 {
+		return false
+	}
+	for i, r := range s {
+		var ok bool
+		if i == 0 {
+			ok = isTokenStartChar(r)
+		} else {
+			ok = isTokenChar(r)
+		}
+		if !ok {
+			return false
+		}
+	}
+	return true
 }
 
 func enchex(x byte) rune {
-  if x < 10 {
-    return rune('0' + x)
-  } else {
-    return rune('a' + x - 10)
-  }
+	if x < 10 {
+		return rune('0' + x)
+	} else {
+		return rune('a' + x - 10)
+	}
 }
 
 func writeQuotedString(s string, b *bufio.Writer, f *Format) {
-  b.WriteRune('"')
-  for i := range s {
-    c := s[i] // don't decode as runes
-    switch c {
-    case '\r':
-      b.WriteString(`\r`)
-    case '\n':
-      b.WriteString(`\n`)
-    case '\t':
-      b.WriteString(`\t`)
-    case '"':
-      b.WriteString(`\"`)
-    case '\\':
-      b.WriteString(`\\`)
-    default:
-      if c < 0x80 && unicode.IsPrint(rune(c)) {
-        b.WriteRune(rune(c))
-      } else {
-        b.WriteString(`\x`)
-        b.WriteRune(enchex((c >> 4) & 0x0F))
-        b.WriteRune(enchex(c & 0x0F))
-      }
-    }
-  }
-  b.WriteRune('"')
+	b.WriteRune('"')
+	for i := range s {
+		c := s[i] // don't decode as runes
+		switch c {
+		case '\r':
+			b.WriteString(`\r`)
+		case '\n':
+			b.WriteString(`\n`)
+		case '\t':
+			b.WriteString(`\t`)
+		case '"':
+			b.WriteString(`\"`)
+		case '\\':
+			b.WriteString(`\\`)
+		default:
+			if c < 0x80 && unicode.IsPrint(rune(c)) {
+				b.WriteRune(rune(c))
+			} else {
+				b.WriteString(`\x`)
+				b.WriteRune(enchex((c >> 4) & 0x0F))
+				b.WriteRune(enchex(c & 0x0F))
+			}
+		}
+	}
+	b.WriteRune('"')
 }
 
 func writeToken(s string, b *bufio.Writer, f *Format) {
-  b.WriteString(s)
+	b.WriteString(s)
 }
 
 func writeBase64String(s string, b *bufio.Writer, f *Format) {
-  b.WriteRune('|')
-  w := base64.NewEncoder(base64.StdEncoding, b)
-  w.Write([]byte(s))
-  w.Close()
-  b.WriteRune('|')
+	b.WriteRune('|')
+	w := base64.NewEncoder(base64.StdEncoding, b)
+	w.Write([]byte(s))
+	w.Close()
+	b.WriteRune('|')
 }
 
 func writeString(s string, b *bufio.Writer, f *Format) {
-  if f.serializationMode == szModeAdvanced {
-    if isBinary(s) {
-      writeBase64String(s, b, f)
-    } else if usesTokenCharset(s) {
-      writeToken(s, b, f)
-    } else {
-      writeQuotedString(s, b, f)
-    }
-    return
-  }
+	if f.serializationMode == szModeAdvanced {
+		if isBinary(s) {
+			writeBase64String(s, b, f)
+		} else if usesTokenCharset(s) {
+			writeToken(s, b, f)
+		} else {
+			writeQuotedString(s, b, f)
+		}
+		return
+	}
 
-  writeUint(uint64(len(s)), b, f)
-  b.WriteRune(':')
-  b.WriteString(s)
+	writeUint(uint64(len(s)), b, f)
+	b.WriteRune(':')
+	b.WriteString(s)
 }
 
 func writeList(vs []interface{}, b *bufio.Writer, f *Format) error {
@@ -728,10 +730,10 @@ func writeList(vs []interface{}, b *bufio.Writer, f *Format) error {
 		switch vv := v.(type) {
 		case string:
 			spacer.write(b, 's')
-      writeString(vv, b, f)
+			writeString(vv, b, f)
 		case []byte:
 			spacer.write(b, 's')
-      writeString(string(vv), b, f)
+			writeString(string(vv), b, f)
 		case int:
 			spacer.write(b, 'i')
 			writeInt(int64(vv), b, f)
