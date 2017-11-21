@@ -525,6 +525,12 @@ func (p *Parser) write(b []byte) (int, error) {
 		case pstateHexStringOdd:
 			if r == ' ' || r == '\r' || r == '\n' || r == '\t' {
 				// skip
+			} else if r == '#' && p.s == "" {
+				// Allow 1-byte hex strings to be represented by a single digit
+				p.push(string([]byte{byte(p.i)}))
+				p.state = pstateDrifting
+				p.i = 0
+				p.lenhint = false
 			} else {
 				hv, ok := dechex(r)
 				if !ok {
